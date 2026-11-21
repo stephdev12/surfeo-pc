@@ -1,0 +1,62 @@
+name: Build Surfeo Windows Client
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Build Surfeo Core Daemon (Go)
+        run: |
+          cd core
+          go mod tidy
+          go build -ldflags="-s -w -H=windowsgui" -o ../windows_bundle/surfeo-core.exe main.go
+          cd ..
+
+      - name: Download official Wintun driver (x64)
+        run: |
+          New-Item -ItemType Directory -Force -Path windows_bundle
+          Invoke-WebRequest -Uri "https://www.wintun.net/builds/wintun-0.14.1.zip" -OutFile "wintun.zip"
+          Expand-Archive "wintun.zip" -DestinationPath "wintun_extracted"
+          Copy-Item "wintun_extracted/wintun/bin/amd64/wintun.dll" -Destination "windows_bundle/wintun.dll"
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Windows App
+        run: flutter build windows --release
+
+      - name: Assemble Release Bundle
+        run: |
+          Copy-Item -Path "build/windows/x64/runner/Release/*" -Destination "windows_bundle/" -Recurse -Force
+          Compress-Archive -Path "windows_bundle/*" -DestinationPath "Surfeo-Windows-x64.zip" -Force
+
+      - name: Upload Windows Bundle Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Surfeo-Windows-x64
+          path: Surfeo-Windows-x64.zip
+          retention-days: 14
