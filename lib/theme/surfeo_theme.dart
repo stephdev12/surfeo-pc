@@ -25,7 +25,7 @@ class SurfeoTheme {
         surface: surface,
         error: error,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
