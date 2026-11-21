@@ -56,7 +56,7 @@ class SshConfig {
       payload: json['payload'] as String? ?? '',
       tls: json['tls'] as bool? ?? false,
       sni: json['sni'] as String?,
-      udpgwPort: json['udpgw_port'] as int? ?? 7300,
+      udpgwPort: json['udpgwPort'] as int? ?? json['udpgw_port'] as int? ?? 7300,
       proxy: json['proxy'] != null ? ProxyConfig.fromJson(json['proxy']) : null,
     );
   }
@@ -89,7 +89,7 @@ class TunnelConfig {
     return TunnelConfig(
       type: json['type'] as String? ?? 'ssh',
       ssh: json['ssh'] != null ? SshConfig.fromJson(json['ssh']) : null,
-      configVersion: json['config_version'] as int? ?? 1,
+      configVersion: json['configVersion'] as int? ?? json['config_version'] as int? ?? 1,
     );
   }
 

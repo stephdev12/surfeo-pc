@@ -8,19 +8,23 @@ class ForfaitCard extends StatelessWidget {
   final Subscription? subscription;
   final int cumulativeBytes;
   final VoidCallback onActivatePressed;
+  final VoidCallback? onRefreshPressed;
+  final bool isRefreshing;
 
   const ForfaitCard({
     super.key,
     required this.subscription,
     required this.cumulativeBytes,
     required this.onActivatePressed,
+    this.onRefreshPressed,
+    this.isRefreshing = false,
   });
 
   @override
   Widget build(BuildContext context) {
     if (subscription == null) {
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(22),
         decoration: BoxDecoration(
           color: SurfeoTheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -28,19 +32,19 @@ class ForfaitCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            const Icon(Icons.vpn_key_outlined, size: 40, color: SurfeoTheme.primary),
+            const Icon(Icons.vpn_key_outlined, size: 44, color: SurfeoTheme.primary),
             const SizedBox(height: 12),
             const Text(
               'Aucun forfait actif',
               style: TextStyle(
                 color: SurfeoTheme.textPrimary,
-                fontSize: 16,
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 6),
             const Text(
-              'Activez une clé Surfeo pour commencer à naviguer en toute sécurité.',
+              'Activez votre clé Surfeo pour commencer à naviguer en toute sécurité.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: SurfeoTheme.textSecondary,
@@ -66,14 +70,29 @@ class ForfaitCard extends StatelessWidget {
 
     final sub = subscription!;
     final totalUsed = sub.usedBytes + cumulativeBytes;
+    final isUnlimited = sub.isUnlimited;
     final quota = sub.quotaBytes;
-    final remaining = (quota - totalUsed).clamp(0, quota);
-    final progress = quota > 0 ? (totalUsed / quota).clamp(0.0, 1.0) : 0.0;
+    final remaining = isUnlimited ? -1 : (quota - totalUsed).clamp(0, quota);
+    final progress = (!isUnlimited && quota > 0) ? (totalUsed / quota).clamp(0.0, 1.0) : 0.0;
 
     String dateStr = 'Illimité';
-    if (sub.expiresAt > 0) {
-      final date = DateTime.fromMillisecondsSinceEpoch(sub.expiresAt * 1000);
-      dateStr = DateFormat('dd MMM yyyy à HH:mm').format(date);
+    if (sub.expiresAt != null) {
+      dateStr = DateFormat('dd MMM yyyy à HH:mm').format(sub.expiresAt!);
+    } else if (sub.expiresAtStr != null && sub.expiresAtStr!.isNotEmpty) {
+      dateStr = sub.expiresAtStr!;
+    }
+
+    String statusText = 'ACTIF';
+    Color statusColor = SurfeoTheme.success;
+    if (sub.isExpired) {
+      statusText = 'EXPIRÉ';
+      statusColor = SurfeoTheme.error;
+    } else if (sub.isQuotaExhausted) {
+      statusText = 'QUOTA ÉPUISÉ';
+      statusColor = SurfeoTheme.error;
+    } else if (!sub.isValid) {
+      statusText = 'INACTIF';
+      statusColor = SurfeoTheme.warning;
     }
 
     return Container(
@@ -81,7 +100,9 @@ class ForfaitCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: SurfeoTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: SurfeoTheme.border),
+        border: Border.all(
+          color: sub.isValid ? SurfeoTheme.border : statusColor.withOpacity(0.4),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,12 +110,12 @@ class ForfaitCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.shield_outlined, size: 20, color: SurfeoTheme.primary),
-                  SizedBox(width: 8),
-                  Text(
-                    'Mon Forfait Surfeo',
+                  Icon(Icons.shield_outlined, size: 20, color: statusColor),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Forfait Surfeo',
                     style: TextStyle(
                       color: SurfeoTheme.textPrimary,
                       fontSize: 16,
@@ -103,38 +124,66 @@ class ForfaitCard extends StatelessWidget {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: sub.isValid ? SurfeoTheme.success.withOpacity(0.15) : SurfeoTheme.error.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: sub.isValid ? SurfeoTheme.success : SurfeoTheme.error,
-                    width: 1,
+              Row(
+                children: [
+                  if (onRefreshPressed != null) ...[
+                    IconButton(
+                      icon: isRefreshing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: SurfeoTheme.primary),
+                            )
+                          : const Icon(Icons.refresh, size: 18, color: SurfeoTheme.textMuted),
+                      tooltip: 'Actualiser le forfait',
+                      onPressed: isRefreshing ? null : onRefreshPressed,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor, width: 1),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  sub.isValid ? 'ACTIF' : 'INACTIF',
-                  style: TextStyle(
-                    color: sub.isValid ? SurfeoTheme.success : SurfeoTheme.error,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                ],
               ),
             ],
           ),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 8,
-              backgroundColor: SurfeoTheme.surfaceElevated,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progress > 0.9 ? SurfeoTheme.error : SurfeoTheme.primary,
-              ),
-            ),
+            child: isUnlimited
+                ? Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          SurfeoTheme.primary.withOpacity(0.4),
+                          SurfeoTheme.primary,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  )
+                : LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: SurfeoTheme.surfaceElevated,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      progress > 0.9 ? SurfeoTheme.error : SurfeoTheme.primary,
+                    ),
+                  ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -143,7 +192,10 @@ class ForfaitCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('CONSOMMÉ', style: TextStyle(color: SurfeoTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'CONSOMMÉ',
+                    style: TextStyle(color: SurfeoTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     SessionStats.formatBytes(totalUsed),
@@ -154,11 +206,18 @@ class ForfaitCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('RESTANT', style: TextStyle(color: SurfeoTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600)),
+                  const Text(
+                    'RESTANT / QUOTA',
+                    style: TextStyle(color: SurfeoTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    SessionStats.formatBytes(remaining),
-                    style: const TextStyle(color: SurfeoTheme.primary, fontSize: 14, fontWeight: FontWeight.bold),
+                    isUnlimited ? 'Illimité' : SessionStats.formatBytes(remaining),
+                    style: TextStyle(
+                      color: isUnlimited ? SurfeoTheme.primary : SurfeoTheme.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -172,10 +231,13 @@ class ForfaitCard extends StatelessWidget {
                 children: [
                   const Icon(Icons.event_outlined, size: 14, color: SurfeoTheme.textMuted),
                   const SizedBox(width: 6),
-                  Text('Expire le : $dateStr', style: const TextStyle(color: SurfeoTheme.textSecondary, fontSize: 12)),
+                  Text(
+                    'Expire le : $dateStr',
+                    style: const TextStyle(color: SurfeoTheme.textSecondary, fontSize: 12),
+                  ),
                 ],
               ),
-              TextButton(
+              TextButton.icon(
                 onPressed: onActivatePressed,
                 style: TextButton.styleFrom(
                   foregroundColor: SurfeoTheme.primary,
@@ -183,7 +245,11 @@ class ForfaitCard extends StatelessWidget {
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                child: const Text('Renouveler', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+                icon: const Icon(Icons.vpn_key_rounded, size: 13),
+                label: const Text(
+                  'Renouveler',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
               ),
             ],
           ),

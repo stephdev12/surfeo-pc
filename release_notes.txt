@@ -1,0 +1,18 @@
+### Surfeo Secure Tunnel - Desktop Edition v1.0.0
+
+Client complet pour ordinateurs (Windows & Linux) avec interface Flutter Neon et moteur réseau Go / Wintun.
+
+#### Contenu de la version :
+- **Windows x64 (`Surfeo-Windows-x64.zip`)** :
+  - `surfeo_pc.exe` : Interface graphique Flutter
+  - `surfeo-core.exe` : Moteur réseau Go (HTTP daemon, SSH, TLS, SOCKS5, Wintun)
+  - `wintun.dll` : Pilote virtuel Layer 3 certifié Windows
+  - `Lancer_Surfeo.bat` : Lanceur 1-clic avec élévation automatique des privilèges administrateur
+- **Linux x64 (`Surfeo-Linux-x64.tar.gz`)** :
+  - `surfeo_pc` : Binaire GTK Flutter
+  - `surfeo-core` : Démon TUN Linux (`/dev/net/tun`)
+
+#### Installation rapide (Windows) :
+1. Télécharger `Surfeo-Windows-x64.zip` et extraire l'archive.
+2. Double-cliquer sur `Lancer_Surfeo.bat` (accepter l'invite UAC administrateur).
+3. Saisir votre clé d'abonnement Surfeo et cliquer sur le bouton de connexion.
