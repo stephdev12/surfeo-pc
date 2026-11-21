@@ -26,8 +26,10 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Enable Windows Desktop
-        run: flutter config --enable-windows-desktop
+      - name: Enable Windows Desktop & Create Scaffolding
+        run: |
+          flutter config --enable-windows-desktop
+          flutter create --platforms=windows .
 
       - name: Build Surfeo Core Daemon (Go)
         run: |
