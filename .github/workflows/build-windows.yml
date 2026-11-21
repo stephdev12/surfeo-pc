@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.22'
-          cache: true
+          cache-dependency-path: core/go.sum
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -28,8 +28,9 @@ jobs:
 
       - name: Enable Windows Desktop & Create Scaffolding
         run: |
+          flutter config --no-analytics
           flutter config --enable-windows-desktop
-          flutter create --platforms=windows .
+          flutter create --project-name surfeo_pc --platforms=windows .
 
       - name: Build Surfeo Core Daemon (Go)
         run: |
