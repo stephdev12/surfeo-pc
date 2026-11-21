@@ -19,10 +19,12 @@ jobs:
           go-version: '1.22'
           cache-dependency-path: core/go.sum
 
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.x'
           channel: 'stable'
           cache: true
 
@@ -54,7 +56,8 @@ jobs:
 
       - name: Assemble Release Bundle
         run: |
-          Copy-Item -Path "build/windows/x64/runner/Release/*" -Destination "windows_bundle/" -Recurse -Force
+          $releaseDir = if (Test-Path "build/windows/x64/runner/Release") { "build/windows/x64/runner/Release" } else { "build/windows/runner/Release" }
+          Copy-Item -Path "$releaseDir/*" -Destination "windows_bundle/" -Recurse -Force
           Compress-Archive -Path "windows_bundle/*" -DestinationPath "Surfeo-Windows-x64.zip" -Force
 
       - name: Upload Windows Bundle Artifact
