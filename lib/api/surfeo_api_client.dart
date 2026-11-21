@@ -45,7 +45,7 @@ class SurfeoApiClient {
         body: jsonEncode({
           'key': key,
           'device_id': deviceId,
-          'platform': 'windows',
+          'platform': Platform.operatingSystem,
         }),
       );
 
