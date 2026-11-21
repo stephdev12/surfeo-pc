@@ -20,9 +20,9 @@ class SurfeoApiClient {
 
   SurfeoApiClient() {
     // Allow self-signed or custom SSL certs for direct VPS/Panel connection
-    final ioClient = HttpClient()
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true
-      ..connectionTimeout = const Duration(seconds: 12);
+    final ioClient = HttpClient();
+    ioClient.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    ioClient.connectionTimeout = const Duration(seconds: 12);
     _client = IOClient(ioClient);
   }
 

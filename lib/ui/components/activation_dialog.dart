@@ -19,7 +19,7 @@ class _ActivationDialogState extends State<ActivationDialog> {
     final key = _controller.text.trim();
     if (key.isEmpty) {
       setState(() => _errorMessage = 'Veuillez saisir votre clé d\'activation');
-      return
+      return;
     }
 
     setState(() {

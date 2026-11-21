@@ -13,10 +13,11 @@ import (
 )
 
 type WindowsTunDevice struct {
-	adapter *wintun.Adapter
-	session wintun.Session
-	vpsIp   string
-	gwIp    string
+	adapter    *wintun.Adapter
+	session    wintun.Session
+	hasSession bool
+	vpsIp      string
+	gwIp       string
 }
 
 func SetupTunDevice(vpsHost string, logger func(string, string)) (*WindowsTunDevice, error) {
@@ -36,10 +37,6 @@ func SetupTunDevice(vpsHost string, logger func(string, string)) (*WindowsTunDev
 	}
 
 	// 3. Create Wintun adapter
-	wintun.SetLogger(func(level wintun.LogLevel, timestamp uint64, msg string) {
-		// Suppress verbose driver logs
-	})
-
 	adapter, err := wintun.CreateAdapter("Surfeo Secure Tunnel", "Wintun", nil)
 	if err != nil {
 		// If already exists, open it
@@ -56,10 +53,11 @@ func SetupTunDevice(vpsHost string, logger func(string, string)) (*WindowsTunDev
 	}
 
 	dev := &WindowsTunDevice{
-		adapter: adapter,
-		session: session,
-		vpsIp:   vpsIp,
-		gwIp:    gwIp,
+		adapter:    adapter,
+		session:    session,
+		hasSession: true,
+		vpsIp:      vpsIp,
+		gwIp:       gwIp,
 	}
 
 	// 4. Configure IP address on Wintun adapter
@@ -89,11 +87,13 @@ func (w *WindowsTunDevice) Close() {
 	runCmd("route", "delete", "0.0.0.0", "mask", "128.0.0.0", "26.26.26.1")
 	runCmd("route", "delete", "128.0.0.0", "mask", "128.0.0.0", "26.26.26.1")
 
-	if w.session != 0 {
-		_ = w.session.End()
+	if w.hasSession {
+		w.session.End()
+		w.hasSession = false
 	}
 	if w.adapter != nil {
 		_ = w.adapter.Close()
+		w.adapter = nil
 	}
 }
 
