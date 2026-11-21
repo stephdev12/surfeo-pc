@@ -58,6 +58,7 @@ jobs:
         run: |
           $releaseDir = if (Test-Path "build/windows/x64/runner/Release") { "build/windows/x64/runner/Release" } else { "build/windows/runner/Release" }
           Copy-Item -Path "$releaseDir/*" -Destination "windows_bundle/" -Recurse -Force
+          if (Test-Path "Lancer_Surfeo.bat") { Copy-Item "Lancer_Surfeo.bat" -Destination "windows_bundle/" }
           Compress-Archive -Path "windows_bundle/*" -DestinationPath "Surfeo-Windows-x64.zip" -Force
 
       - name: Upload Windows Bundle Artifact
