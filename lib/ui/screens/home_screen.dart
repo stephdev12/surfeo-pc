@@ -263,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             // Top Navigation / Header Bar
-            _buildHeader(shortDeviceId),
+            _buildHeader(deviceId, shortDeviceId),
             const Divider(color: SurfeoTheme.border, height: 1),
 
             // Responsive Body
@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(String shortDeviceId) {
+  Widget _buildHeader(String deviceId, String shortDeviceId) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       color: SurfeoTheme.background,
